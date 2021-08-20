@@ -16,21 +16,21 @@ module ALU #(parameter W=8, Ops=4)(
 );	
 
 	logic 	Zero,		// zero flag
-			Positive,	// positive flag	
+			Positive;	// positive flag	
 
-	logic [W-1:0] zero;						    
+	// logic [7:0] z;						    
 		
 	op_mne op_mnemonic;			          // type enum: used for convenient waveform viewing
 
 	always_comb begin
 		Out = 0;                              // No Op = default
-		zero = 0;
+		// z = 0;
 		case(OP)							  
 			ADD : Out = InputA + InputB;        // add 
 			SUB : Out = InputA + (~InputB) + 1;
 			LSH : Out = InputA << InputB;    // shift left, fill in with SC_in 
-			RSH : Out = {zero[InputB - 1: 0], InputA[7:InputB]};    // shift right
-			MOV : Out = InputB
+			RSH : Out = InputA >> InputB;    // shift right
+			MOV : Out = InputB;
 			XOR : Out = InputA ^ InputB;        // bitwise exclusive OR
 			AND : Out = InputA & InputB;        // bitwise AND
 			OR 	: Out = InputA | InputB;
@@ -44,6 +44,7 @@ module ALU #(parameter W=8, Ops=4)(
 	always_comb begin
 		Zero = 0;
 		Positive = 0;
+		BranchFlag = 0;
 		if (OP == BGE || OP == BNE || OP == BEQ) begin
 			Zero = !Out;
 			Positive = !Out[7];
@@ -51,10 +52,10 @@ module ALU #(parameter W=8, Ops=4)(
 				BranchFlag = Zero | Positive;
 			end
 			if (OP == BNE) begin
-				BranchFlag = !Zero;
+				BranchFlag = Zero;
 			end
 			if (OP == BNE) begin
-				BranchFlag = Zero;
+				BranchFlag = !Zero;
 			end
 		end
 	end

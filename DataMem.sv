@@ -17,7 +17,7 @@ module DataMem #(parameter W=8, A=8)  (
     DataOut = Core[DataAddress];
 
   always_ff @ (posedge Clk)		     // writes are sequential and conditional
-    if(WriteEn) 
+    if(MemWrite) 
       Core[DataAddress] <= DataIn;
 
 endmodule

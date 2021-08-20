@@ -44,7 +44,7 @@ end
 
 // sequential (clocked) writes 
 always_ff @ (posedge Clk)
-  if (WriteEn && RegDest == 2'b00)	                             // works just like data_memory writes
+  if (RegWrite && RegDest == 2'b00)	                             // works just like data_memory writes
     Registers[Waddr] <= DataIn;
 
 endmodule
