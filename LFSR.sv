@@ -6,16 +6,25 @@ module LFSR (
 	output logic [6:0] State
 );
 	logic[6:0] NextTap, NextState, Tap;
-	logic[0:0] NextStateBit;
-	logic StateChanged = 0;
+	logic NextStateBit, StateChanged = 0, TapChanged = 0;
 	// Lookup table to handle 10-bit program counter jumps w/ only 2 bits
 	LUT LUT1(.TapIndex (DataIn[3:0]),
          .Tap(NextTap)
     );
 
 	always_latch begin
-		if (RegWrite && RegDest == 2'b01) State = DataIn;
-		else if (RegWrite && RegDest == 2'b10) Tap = NextTap; 
+		StateChanged = StateChanged;
+		if (RegWrite && RegDest == 2'b01 && !TapChanged) begin
+			State = DataIn;
+			TapChanged = 1;
+		end 
+		else if (RegWrite && RegDest == 2'b10 && !TapChanged) begin
+			Tap = NextTap; 
+			TapChanged = 1;
+		end
+		if (!RegWrite) begin
+			TapChanged = 0;
+		end
 		NextState = Tap & State;
 		NextStateBit = ^NextState;
 		if (NextLFSR && !StateChanged) begin

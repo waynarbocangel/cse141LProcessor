@@ -10,15 +10,14 @@ module TopLevel(		   // you will have the same 3 ports
     output logic Ack	   // done flag from DUT
     );
 
-wire [ 9:0] PgmCtr,        // program counter
-			PCTarg;
-wire [ 8:0] Instruction;   // our 9-bit opcode
-wire [ 7:0] ReadA, ReadB;  // reg_file outputs
-wire [ 7:0] InA, InB, 	   // ALU operand inputs
+logic [ 9:0] PgmCtr;
+logic [ 8:0] Instruction;   // our 9-bit opcode
+logic [ 7:0] ReadA, ReadB;  // reg_file outputs
+logic [ 7:0] InA, InB, 	   // ALU operand inputs
             ALU_out;       // ALU result
-wire [ 7:0] RegWriteValue, // data in to reg file
+logic [ 7:0] RegWriteValue, // data in to reg file
 	   	    MemReadValue;  // data out from data_memory
-wire        MemWrite,	   // data_memory write enable
+logic        MemWrite,	   // data_memory write enable
 			BranchEn,	   // to program counter: branch enable
 			ALUSrc,
 			RegWrite,	   // reg_file write enable
@@ -26,9 +25,10 @@ wire        MemWrite,	   // data_memory write enable
 			RegOut1,
 			RegOut2,
 			BranchFlag;		   // ALU output = 0 flag
-wire [1:0]	MemToReg,
+logic [1:0]	MemToReg,
 			RegDest;
-wire [3:0]	ALUOp;
+logic [3:0]	ALUOp;
+logic [2:0] RaddrA, RaddrB;
 logic[15:0] CycleCt;	   // standalone; NOT PC!
 
 // Fetch stage = Program Counter + Instruction ROM
@@ -38,7 +38,7 @@ logic[15:0] CycleCt;	   // standalone; NOT PC!
 	.Clk          (Clk),   //    here, (Clk) is required in Verilog, optional in SystemVerilog
 	.BranchRel    (BranchEn),  // branch enable
 	.ALUFlag	  (ALUFlag),
-    .Target       (PCTarg),   // "where to?" or "how far?" during a jump or branch
+    .Target       ({0'b000, Instruction[5:0]}),   // "where to?" or "how far?" during a jump or branch
 	.ProgCtr      (PgmCtr)	 // program count = index to instruction memory
 	);					  
 
@@ -73,8 +73,8 @@ logic[15:0] CycleCt;	   // standalone; NOT PC!
 	  .RegOut2	 (RegOut2),
 	  .NextLFSR	 (NextLFSR),
 	  .RegDest	 (RegDest),
-	  .RaddrA    (Instruction[5:3]),        //concatenate with 0 to give us 4 bits
-	  .RaddrB    (Instruction[2:0]), 
+	  .RaddrA,        //concatenate with 0 to give us 4 bits
+	  .RaddrB, 
 	  .Waddr     (Instruction[5:3]), 	      // mux above
 	  .DataIn    (RegWriteValue), 
 	  .DataOutA  (ReadA), 
@@ -85,10 +85,34 @@ logic[15:0] CycleCt;	   // standalone; NOT PC!
 	.raddrA ({Instruction[5:3],1'b0});
 	.raddrB ({Instruction[5:3],1'b1});
 */
-    assign InA = ReadA;						  // connect RF out to ALU in
-	assign InB = ALUSrc ? {5'b00000, Instruction[2:0]} : ReadB;	          			  // interject switch/mux if needed/desired
-// controlled by Ctrl1 -- must be high for load from data_mem; otherwise usually low
-	assign RegWriteValue = (MemToReg == 2'b00)? ALU_out : ((MemToReg == 2'b01) ? MemReadValue : ((MemToReg == 2'b10) ? {2'b00, Instruction[5:0]} : ReadA));  // 2:1 switch into reg_file
+	always_comb begin
+		InA = ReadA;
+		RaddrB = Instruction[2:0];
+		if (Instruction[8:6] == 3'b000 && (MemWrite || MemToReg == 2'b01)) begin
+			RaddrA = 3'b000;
+		end
+		else begin
+			RaddrA = Instruction[5:3];
+		end
+		if (ALUSrc) begin
+			InB = {5'b00000, Instruction[2:0]};
+		end
+		else begin
+			InB = ReadB;
+		end
+		if (MemToReg == 2'b00) begin
+			RegWriteValue = ALU_out;
+		end
+		else if (MemToReg == 2'b01) begin
+			RegWriteValue = MemReadValue;
+		end
+		else if (MemToReg == 2'b10) begin
+			RegWriteValue = {2'b00, Instruction[5:0]};
+		end
+		else begin
+			RegWriteValue = ReadA;
+		end
+	end
     ALU ALU1  (
 	  .InputA  (InA),
 	  .InputB  (InB), 

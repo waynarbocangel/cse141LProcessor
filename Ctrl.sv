@@ -28,14 +28,10 @@ always_latch begin
 	NextLFSR = 0;
 	RegOut1 = 0;
 	RegOut2 = 0;
-	Ack = 0;
 	MemToReg = 2'b00;
 	RegDest = 2'b00;
 	ALUOp = 4'b0000;
-	if (Instruction[8:6] == 3'b111) begin
-		Ack = 1;
-	end
-	else if (Instruction[8:6] == 3'b110) begin
+	if (Instruction[8:6] == 3'b110) begin
 		S = Instruction[1:0];
 	end
 	else begin
@@ -53,7 +49,7 @@ always_latch begin
 			RegDest = 2'b10;
 		end
 
-		if (Instruction[8:6] == 3'b000 && S == 2'b001) begin
+		if (Instruction[8:6] == 3'b000 && S == 2'b01) begin
 			MemWrite = 1;
 		end
 
@@ -104,6 +100,8 @@ always_latch begin
 
 	end
 end
+
+assign Ack = (Instruction[8:6] == 3'b111) ? 1 : 0;
 
 endmodule
 
