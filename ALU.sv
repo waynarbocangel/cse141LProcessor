@@ -24,7 +24,6 @@ module ALU #(parameter W=8, Ops=4)(
 
 	always_comb begin
 		Out = 0;                              // No Op = default
-		// z = 0;
 		case(OP)							  
 			ADD : Out = InputA + InputB;        // add 
 			SUB : Out = InputA + (~InputB) + 1;
@@ -49,9 +48,9 @@ module ALU #(parameter W=8, Ops=4)(
 			Zero = !Out;
 			Positive = !Out[7];
 			if (OP == BGE) begin
-				BranchFlag = Zero | Positive;
+				BranchFlag = Zero || Positive;
 			end
-			if (OP == BNE) begin
+			if (OP == BEQ) begin
 				BranchFlag = Zero;
 			end
 			if (OP == BNE) begin

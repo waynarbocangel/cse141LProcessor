@@ -31,70 +31,71 @@ always_latch begin
 	MemToReg = 2'b00;
 	RegDest = 2'b00;
 	ALUOp = 4'b0000;
-	if (Instruction[8:6] == 3'b110) begin
+	if (Instruction[8:6] == 3'b110) begin //set
 		S = Instruction[1:0];
 	end
 	else begin
-		if (Instruction[8:6] == 3'b000 && S == 2'b00) begin
+		if (Instruction[8:6] == 3'b000 && S == 2'b00) begin // Load
 			MemToReg = 2'b01;
 		end
 
-		if (Instruction[8:6] == 3'b001 && S == 2'b11) begin
+		if (Instruction[8:6] == 3'b001 && S == 2'b11) begin // setLFSR
 			MemToReg = 2'b11;
 			RegDest = 2'b01;
 		end
 
-		if (Instruction[8:6] == 3'b011 && S == 2'b01) begin
-			MemToReg = 2'b10;
+		if (Instruction[8:6] == 3'b011 && S == 2'b01) begin // setTap
+			MemToReg = 2'b11;
 			RegDest = 2'b10;
+			RegOut1 = 1;
 		end
 
-		if (Instruction[8:6] == 3'b000 && S == 2'b01) begin
+		if (Instruction[8:6] == 3'b000 && S == 2'b01) begin // Store
 			MemWrite = 1;
 		end
 
-		if ((Instruction[8:6] == 3'b011 && (S == 2'b10 || S == 2'b11)) || (Instruction[8:6] == 3'b100 && S == 2'b01)) begin
+		if ((Instruction[8:6] == 3'b011 && (S == 2'b10 || S == 2'b11)) || (Instruction[8:6] == 3'b100 && S == 2'b01)) begin //Branch BGE, BNE, BEQ
 			BranchEn = 1;
 		end
 
-		if ((Instruction[8:6] == 3'b000 && (S == 2'b00 || S == 2'b01)) || Instruction[8:6] == 3'b001) begin
+		if ((Instruction[8:6] == 3'b000 && (S == 2'b00 || S == 2'b01)) || Instruction[8:6] == 3'b001) begin // Load/Store, left shift, right shift, mov immediate, set lfsr
 			ALUSrc = 1;
 		end
 
 		if ((S != 2'b01 && (Instruction[8:6] == 3'b000 || Instruction[8:6] == 3'b010)) || Instruction[8:6] == 3'b001 || (Instruction[8:6] == 3'b011 && (S == 2'b00 || S == 2'b01)) || (Instruction[8:6] == 3'b100 && S == 2'b00)) begin
-			RegWrite = 1;
+			RegWrite = 1; // Load, Add, Sub, Left, Right, Mov immediate, setLFSR, OR, setTap, reduction XOR, XOR, XOR, AND
 		end
 
-		if (Instruction[8:6] == 3'b010 && S == 2'b01) begin
+		if (Instruction[8:6] == 3'b010 && S == 2'b01) begin // Next
 			NextLFSR = 1;
 		end
 
-		if ((Instruction[8:6] == 3'b010 && S == 2'b00) && (Instruction[8:6] == 3'b100 && S == 2'b00)) begin
+		if ((Instruction[8:6] == 3'b010 && S == 2'b00) || (Instruction[8:6] == 3'b100 && S == 2'b00)) begin // XOR, reduction XOR
 			RegOut1 = 1;
 			RegOut2 = 1;
 		end
 		
 		case (Instruction[8:6])
 			3'b000: begin
-				if (S == 2'b11) ALUOp = 4'b0001;
+				if (S == 2'b11) ALUOp = 4'b0001; // Sub register
 			end
 			3'b001: begin
-				if (S == 2'b00) ALUOp = 4'b0010;
-				else if (S == 2'b01) ALUOp = 4'b0011;
-				else ALUOp = 4'b0100; 
+				if (S == 2'b00) ALUOp = 4'b0010; // Left shift
+				else if (S == 2'b01) ALUOp = 4'b0011; //Right shift
+				else ALUOp = 4'b0100; // Mov immediate, setLFSR
 			end
 			3'b010: begin
-				if (S == 2'b11) ALUOp = 4'b0110;
-				else ALUOp = 4'b0101;
+				if (S == 2'b11) ALUOp = 4'b0110; //AND
+				else ALUOp = 4'b0101; // XOR, Next, XOR
 			end
 			3'b011: begin
-				if (S == 2'b10) ALUOp = 4'b1000;
-				else if (S == 2'b11) ALUOp = 4'b1001;
-				else ALUOp = 4'b0111;
+				if (S == 2'b10) ALUOp = 4'b1000; // Branch BGE
+				else if (S == 2'b11) ALUOp = 4'b1001; // Branch BNE
+				else ALUOp = 4'b0111; // OR, setTap
 			end
 			3'b100: begin
-				if (S == 2'b00) ALUOp = 4'b1010;
-				else ALUOp = 4'b1011;
+				if (S == 2'b00) ALUOp = 4'b1010; // Reduction XOR
+				else ALUOp = 4'b1011; //Branch BEQ
 			end 
 		endcase
 

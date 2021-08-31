@@ -10,14 +10,14 @@ module TopLevel(		   // you will have the same 3 ports
     output logic Ack	   // done flag from DUT
     );
 
-logic [ 9:0] PgmCtr;
+logic [ 9:0] PgmCtr, Target;
 logic [ 8:0] Instruction;   // our 9-bit opcode
 logic [ 7:0] ReadA, ReadB;  // reg_file outputs
 logic [ 7:0] InA, InB, 	   // ALU operand inputs
             ALU_out;       // ALU result
 logic [ 7:0] RegWriteValue, // data in to reg file
 	   	    MemReadValue;  // data out from data_memory
-logic        MemWrite,	   // data_memory write enable
+logic       MemWrite,	   // data_memory write enable
 			BranchEn,	   // to program counter: branch enable
 			ALUSrc,
 			RegWrite,	   // reg_file write enable
@@ -37,8 +37,8 @@ logic[15:0] CycleCt;	   // standalone; NOT PC!
 	.Start        (Start),   // SystemVerilog shorthand for .grape(grape) is just .grape 
 	.Clk          (Clk),   //    here, (Clk) is required in Verilog, optional in SystemVerilog
 	.BranchRel    (BranchEn),  // branch enable
-	.ALUFlag	  (ALUFlag),
-    .Target       ({0'b000, Instruction[5:0]}),   // "where to?" or "how far?" during a jump or branch
+	.ALUFlag	  (BranchFlag),
+    .Target,   // "where to?" or "how far?" during a jump or branch
 	.ProgCtr      (PgmCtr)	 // program count = index to instruction memory
 	);					  
 
@@ -89,7 +89,12 @@ logic[15:0] CycleCt;	   // standalone; NOT PC!
 		InA = ReadA;
 		RaddrB = Instruction[2:0];
 		if (Instruction[8:6] == 3'b000 && (MemWrite || MemToReg == 2'b01)) begin
-			RaddrA = 3'b000;
+			RaddrB = 3'b000;
+			InA = ReadB;
+		end
+		else if (BranchEn) begin
+			RaddrA = 3'b011;
+			RaddrB = 3'b100;
 		end
 		else begin
 			RaddrA = Instruction[5:3];
@@ -107,10 +112,16 @@ logic[15:0] CycleCt;	   // standalone; NOT PC!
 			RegWriteValue = MemReadValue;
 		end
 		else if (MemToReg == 2'b10) begin
-			RegWriteValue = {2'b00, Instruction[5:0]};
+			RegWriteValue = {5'b00000, Instruction[2:0]};
 		end
 		else begin
-			RegWriteValue = ReadA;
+			RegWriteValue = ReadB;
+		end
+		if (Instruction[5] == 0) begin
+			Target = {4'b0000, Instruction[5:0]};
+		end
+		else begin
+			Target = {4'b1111, Instruction[5:0]};
 		end
 	end
     ALU ALU1  (

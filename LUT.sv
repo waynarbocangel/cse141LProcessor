@@ -11,15 +11,15 @@ module LUT(
 
 always_comb begin
   case(TapIndex)		   
-	3'b000:		Tap = 8'h60;   // -16, i.e., move back 16 lines of machine code
-	3'b001:		Tap = 8'h48;
-	3'b010:		Tap = 8'h78;
-	3'b011:		Tap = 8'h72;
-	3'b100:		Tap = 8'h6A;
-	3'b101:		Tap = 8'h69;
-	3'b110:		Tap = 8'h5C;
-	3'b111:		Tap = 8'h7E;
-	default:	Tap = 8'h7B;
+	4'b0000:		Tap = 7'h60;   // -16, i.e., move back 16 lines of machine code
+	4'b0001:		Tap = 7'h48;
+	4'b0010:		Tap = 7'h78;
+	4'b0011:		Tap = 7'h72;
+	4'b0100:		Tap = 7'h6A;
+	4'b0101:		Tap = 7'h69;
+	4'b0110:		Tap = 7'h5C;
+	4'b0111:		Tap = 7'h7E;
+	default:	Tap = 7'h7B;
   endcase
 end
 
