@@ -46,7 +46,7 @@ module decrypt_depad_tb ()        ;
   assign LFSR_ptrn[7] = 7'h7E;
   assign LFSR_ptrn[8] = 7'h7B;
   always_comb begin
-    pt_no = 0; //$random>>22;      // or pick a specific one
+    pt_no = 6; //$random>>22;      // or pick a specific one
     if(pt_no>8) pt_no = 0;		   // restrict to 0 through 8 (our legal patterns)
   end    
   assign lfsr_ptrn = LFSR_ptrn[pt_no];  // engage the selected pattern
@@ -65,11 +65,11 @@ module decrypt_depad_tb ()        ;
   end
 
 // ***** instantiate your own top level design here *****
-  top_level dut(
-    .clk     (clk  ),   // input: use your own port names, if different
-    .init    (init ),   // input: some prefer to call this ".reset"
-    .req     (start),   // input: launch program
-    .ack     (done )    // output: "program run complete"
+  TopLevel dut(
+    .Clk     (clk  ),   // input: use your own port names, if different
+    .Reset    (init ),   // input: some prefer to call this ".reset"
+    .Start     (start),   // input: launch program
+    .Ack     (done )    // output: "program run complete"
   );
 
   initial begin
@@ -122,10 +122,10 @@ module decrypt_depad_tb ()        ;
 //    dut.DM.Core[62] = lfsr_ptrn;      // LFSR feedback tap positions (9 possible ptrns)
 //    dut.DM.Core[63] = LFSR_init;      // LFSR starting state (nonzero)
     for(int m=0; m<24; m++)             // load first 24 characters of encrypted message into data memory
-      dut.DM.Core[m+64] = msg_crypto1[m];
+      dut.DM1.Core[m+64] = msg_crypto1[m];
     for(int n=24; n<64; n++) begin	  	// load subsequent, possibly corrupt, encrypted message into data memory
 	  flipper = $random;                // value between 0 and 63, inclusive
-      dut.DM.Core[n+64] = msg_crypto1[n]^(1<<flipper);
+      dut.DM1.Core[n+64] = msg_crypto1[n]^(1<<flipper);
       if(flipper<8) flipped[n]=1;
 	end
     #20ns init  = 1'b0;				  // suggestion: reset = 1 forces your program counter to 0
@@ -138,7 +138,7 @@ module decrypt_depad_tb ()        ;
 // ***** use your instance name for data memory and its internal core *****
     for(int n=0; n<64; n++)	begin
       if(flipped[n+pre_length+space]) begin
-        if(dut.DM.Core[n][7]) begin
+        if(dut.DM1.Core[n][7]) begin
           $fdisplay(file_no, "error successfully flagged");
           score++;
         end else begin
@@ -146,14 +146,14 @@ module decrypt_depad_tb ()        ;
         end
       end
       else if({flipped[n+pre_length+space],msg_padded1[n+pre_length+space][6:0]}
-             == dut.DM.Core[n])	begin
+             == dut.DM1.Core[n])	begin
         $fdisplay(file_no,"%d bench msg: %s %h dut msg: %h",
-          n, msg_padded1[n+pre_length+space][6:0], msg_padded1[n+pre_length+space], dut.DM.Core[n]);
+          n, msg_padded1[n+pre_length+space][6:0], msg_padded1[n+pre_length+space], dut.DM1.Core[n]);
         score++;
       end
       else
         $fdisplay(file_no,"%d bench msg: %s %h dut msg: %h  OOPS!",
-          n, msg_padded1[n+pre_length+space][6:0], msg_padded1[n+pre_length+space], dut.DM.Core[n]);
+          n, msg_padded1[n+pre_length+space][6:0], msg_padded1[n+pre_length+space], dut.DM1.Core[n]);
     end
     $fdisplay(file_no,"score = %d/64",score);
     #20ns $fclose(file_no);

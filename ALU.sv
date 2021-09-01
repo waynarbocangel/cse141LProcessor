@@ -14,16 +14,19 @@ module ALU #(parameter W=8, Ops=4)(
 	output logic BranchFlag      // output = Zero | Positive | Negative
 	// you may provide additional status flags, if desired
 );	
-
+	logic [10:0] DM64;
+	logic [6:0] DM73;
 	logic 	Zero,		// zero flag
 			Positive;	// positive flag	
-
-	// logic [7:0] z;						    
+				    
 		
 	op_mne op_mnemonic;			          // type enum: used for convenient waveform viewing
 
+	LFSR_prog2_LUT TapGet(.DM64, .DM73);
+
 	always_comb begin
-		Out = 0;                              // No Op = default
+		Out = 0;                             // No Op = default
+		DM64 = 0;
 		case(OP)							  
 			ADD : Out = InputA + InputB;        // add 
 			SUB : Out = InputA + (~InputB) + 1;
@@ -37,6 +40,11 @@ module ALU #(parameter W=8, Ops=4)(
 			BNE : Out = InputA + (~InputB) + 1;
 			RXOR: Out = ^InputA[6:0];
 			BEQ : Out = InputA + (~InputB) + 1;
+			TAPGET : begin 
+				DM64 = InputB[6:0] * 9;
+				DM64 = DM64 + InputA;
+				Out = {!(^DM73), DM73[6:0]};
+			end
 		endcase
 	end
 

@@ -37,8 +37,7 @@ LFSR LFSR1(.NextLFSR, .RegWrite, .RegDest, .DataIn(DataIn[6:0]),
 always_comb begin
 	if (RegOut1) DataOutA = Registers[RaddrB];
 	else DataOutA = Registers[RaddrA];
-
-	if(RegOut2) DataOutB = {1'b0, State[6:0]};
+	if(RegOut2) DataOutB = {DataOutA[7], State[6:0]};
 	else DataOutB = Registers[RaddrB];
 end
 

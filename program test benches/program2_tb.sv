@@ -43,7 +43,7 @@ module decrypt_tb ()        ;
   assign LFSR_ptrn[7] = 7'h7E;
   assign LFSR_ptrn[8] = 7'h7B;
   always_comb begin
-    pt_no = 0; //$random>>22;      // or pick a specific one
+    pt_no = 3; //$random>>22;      // or pick a specific one
     if(pt_no>8) pt_no = 0;		   // restrict to 0 through 8 (our legal patterns)
   end    
   assign lfsr_ptrn = LFSR_ptrn[pt_no];  // engage the selected pattern
@@ -61,7 +61,7 @@ module decrypt_tb ()        ;
   end
 
 // ***** instantiate your own top level design here *****
-  top_level dut(
+  TopLevel dut(
     .Clk     (clk  ),   // input: use your own port names, if different
     .Reset    (init ),   // input: some prefer to call this ".reset"
     .Start     (start),   // input: launch program
@@ -116,7 +116,7 @@ module decrypt_tb ()        ;
 //    dut.DM.core[62] = lfsr_ptrn;      // LFSR feedback tap positions (9 possible ptrns)
 //    dut.DM.core[63] = LFSR_init;      // LFSR starting state (nonzero)
     for(int n=0; n<64; n++) 			// load encrypted message into data memory
-	  dut.DM.Core[n+64] = msg_crypto1[n];
+	  dut.DM1.Core[n+64] = msg_crypto1[n];
     #20ns init  = 1'b0;				  // suggestion: reset = 1 forces your program counter to 0
 	#10ns start = 1'b0; 			  //   request/start = 1 holds your program counter 
     #60ns;                            // wait for 6 clock cycles of nominal 10ns each
@@ -126,14 +126,14 @@ module decrypt_tb ()        ;
 // ***** reads your results and compares to test bench
 // ***** use your instance name for data memory and its internal core *****
     for(int n=0; n<64; n++)	begin
-	  if(msg_padded1[n]==dut.DM.Core[n])	begin
+	  if(msg_padded1[n]==dut.DM1.Core[n])	begin
         $fdisplay(file_no,"%d bench msg: %s %h dut msg: %h",
-          n, msg_padded1[n], msg_padded1[n], dut.DM.Core[n]);
+          n, msg_padded1[n], msg_padded1[n], dut.DM1.Core[n]);
 		score++;
 	  end
       else
         $fdisplay(file_no,"%d bench msg: %s %h dut msg: %h  OOPS!",
-          n, msg_padded1[n], msg_padded1[n], dut.DM.Core[n]);
+          n, msg_padded1[n], msg_padded1[n], dut.DM1.Core[n]);
     end
     $fdisplay(file_no,"score = %d/64",score);
     #20ns $fclose(file_no);

@@ -22,7 +22,7 @@ def decode(encodedArray: list):
 	
 	counter = 0
 	setLFSR(currentLFSR)
-	setTap(tapArray[currentTap])
+	setTap(currentTap)
 	decodedArray = []
 	while counter < len(encodedArray) and len(decodedArray) < 52:
 		decodedMessage = encodedArray[counter] ^ currentLFSR

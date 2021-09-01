@@ -16,16 +16,17 @@ logic [ 7:0] ReadA, ReadB;  // reg_file outputs
 logic [ 7:0] InA, InB, 	   // ALU operand inputs
             ALU_out;       // ALU result
 logic [ 7:0] RegWriteValue, // data in to reg file
-	   	    MemReadValue;  // data out from data_memory
+	   	    MemReadValue,
+			Mem64;  // data out from data_memory
 logic       MemWrite,	   // data_memory write enable
 			BranchEn,	   // to program counter: branch enable
-			ALUSrc,
 			RegWrite,	   // reg_file write enable
 			NextLFSR,
 			RegOut1,
 			RegOut2,
 			BranchFlag;		   // ALU output = 0 flag
 logic [1:0]	MemToReg,
+			ALUSrc,
 			RegDest;
 logic [3:0]	ALUOp;
 logic [2:0] RaddrA, RaddrB;
@@ -88,6 +89,7 @@ logic[15:0] CycleCt;	   // standalone; NOT PC!
 	always_comb begin
 		InA = ReadA;
 		RaddrB = Instruction[2:0];
+		RaddrA = Instruction[5:3];
 		if (Instruction[8:6] == 3'b000 && (MemWrite || MemToReg == 2'b01)) begin
 			RaddrB = 3'b000;
 			InA = ReadB;
@@ -96,14 +98,15 @@ logic[15:0] CycleCt;	   // standalone; NOT PC!
 			RaddrA = 3'b011;
 			RaddrB = 3'b100;
 		end
-		else begin
-			RaddrA = Instruction[5:3];
-		end
-		if (ALUSrc) begin
+		if (ALUSrc == 2'b01) begin
 			InB = {5'b00000, Instruction[2:0]};
 		end
-		else begin
+		else if (ALUSrc == 2'b00) begin
 			InB = ReadB;
+		end
+		else begin
+			InB = Mem64 ^ 8'b00100000;
+			InB = InB - 1;
 		end
 		if (MemToReg == 2'b00) begin
 			RegWriteValue = ALU_out;
@@ -136,7 +139,8 @@ logic[15:0] CycleCt;	   // standalone; NOT PC!
 		.DataAddress  (ALU_out), 
 		.MemWrite     (MemWrite), 
 		.DataIn       (ReadA), 
-		.DataOut      (MemReadValue) , 
+		.DataOut      (MemReadValue) ,
+		.Mem64,
 		.Clk,
 		.Reset		  (Reset)
 	);

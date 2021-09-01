@@ -7,7 +7,6 @@ module Ctrl (
 	input[ 8:0] Instruction,	   // machine code
 	output logic	MemWrite,
 					BranchEn,
-					ALUSrc,
 					RegWrite,
 					NextLFSR,
 					RegOut1,
@@ -15,6 +14,7 @@ module Ctrl (
 					Ack,      // "done w/ program"
 	output logic[1:0] 	MemToReg,
   						RegDest,
+						ALUSrc,
 	output logic [3:0] ALUOp
   );
 
@@ -23,7 +23,7 @@ logic [1:0] S;
 always_latch begin
 	MemWrite = 0;
 	BranchEn = 0;
-	ALUSrc = 0;
+	ALUSrc = 2'b00;
 	RegWrite = 0;
 	NextLFSR = 0;
 	RegOut1 = 0;
@@ -59,20 +59,23 @@ always_latch begin
 		end
 
 		if ((Instruction[8:6] == 3'b000 && (S == 2'b00 || S == 2'b01)) || Instruction[8:6] == 3'b001) begin // Load/Store, left shift, right shift, mov immediate, set lfsr
-			ALUSrc = 1;
+			ALUSrc = 2'b01;
 		end
 
-		if ((S != 2'b01 && (Instruction[8:6] == 3'b000 || Instruction[8:6] == 3'b010)) || Instruction[8:6] == 3'b001 || (Instruction[8:6] == 3'b011 && (S == 2'b00 || S == 2'b01)) || (Instruction[8:6] == 3'b100 && S == 2'b00)) begin
-			RegWrite = 1; // Load, Add, Sub, Left, Right, Mov immediate, setLFSR, OR, setTap, reduction XOR, XOR, XOR, AND
+		if ((S != 2'b01 && (Instruction[8:6] == 3'b000 || Instruction[8:6] == 3'b010)) || Instruction[8:6] == 3'b001 || (Instruction[8:6] == 3'b011 && (S == 2'b00 || S == 2'b01)) || (Instruction[8:6] == 3'b100 && S != 2'b01)) begin
+			RegWrite = 1; // Load, Add, Sub, Left, Right, Mov immediate, setLFSR, OR, setTap, reduction XOR, XOR, XOR, AND, getTap
 		end
 
 		if (Instruction[8:6] == 3'b010 && S == 2'b01) begin // Next
 			NextLFSR = 1;
 		end
 
-		if ((Instruction[8:6] == 3'b010 && S == 2'b00) || (Instruction[8:6] == 3'b100 && S == 2'b00)) begin // XOR, reduction XOR
+		if ((Instruction[8:6] == 3'b010 && S == 2'b00) || (Instruction[8:6] == 3'b100 && S != 2'b01)) begin // XOR, reduction XOR, getTap
 			RegOut1 = 1;
 			RegOut2 = 1;
+		end
+		if (Instruction[8:6] == 3'b100 && S == 2'b10) begin // getTap
+			ALUSrc = 2'b10;
 		end
 		
 		case (Instruction[8:6])
@@ -95,6 +98,7 @@ always_latch begin
 			end
 			3'b100: begin
 				if (S == 2'b00) ALUOp = 4'b1010; // Reduction XOR
+				else if (S == 2'b10) ALUOp = 4'b1100; // getTap
 				else ALUOp = 4'b1011; //Branch BEQ
 			end 
 		endcase
