@@ -20,7 +20,7 @@ module decrypt_depad_tb ()        ;
 // note in practice your design should be able to handle ANY ASCII string that is
 //  restricted to characters between space (0x20) and script f (0x9f) and shorter than 
 //  53 characters in length
-  string     str1  = "Mr. Watson, come here. I want to see you.";     // sample program 1 input
+  string     str1  = "We just lost the summer to 141L";     // sample program 1 input
 //  string     str1  = " Knowledge comes, but wisdom lingers.    ";   // alternative inputs
 //  string     str1  = "  01234546789abcdefghijklmnopqrstuvwxyz. ";   //   (make up your own,
 //  string     str1  = "  f       A joke is a very serious thing.";   // 	as well)
@@ -46,7 +46,7 @@ module decrypt_depad_tb ()        ;
   assign LFSR_ptrn[7] = 7'h7E;
   assign LFSR_ptrn[8] = 7'h7B;
   always_comb begin
-    pt_no = 6; //$random>>22;      // or pick a specific one
+    pt_no = 4; //$random>>22;      // or pick a specific one
     if(pt_no>8) pt_no = 0;		   // restrict to 0 through 8 (our legal patterns)
   end    
   assign lfsr_ptrn = LFSR_ptrn[pt_no];  // engage the selected pattern
